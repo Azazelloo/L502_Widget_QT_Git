@@ -13,7 +13,7 @@ void SetGenOutps(QVector<QTcpSocket*>* vSockets,QString state){
     }
 }
 
-//_____фукнция отправляющая два байта на COM
+//_____фукнция, отправляющая два байта на COM
 size_t Send2BytesOnCOM(QSerialPort* m_serial,unsigned short data){
     QByteArray msg;
     msg.push_back(static_cast<char>(data)); // первый байт слова
