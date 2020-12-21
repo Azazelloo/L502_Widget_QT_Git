@@ -68,7 +68,7 @@ DeviceManager::DeviceManager(QWidget *parent)
 
        QSerialPort* m_serial=new QSerialPort;
 
-//        //подтягиваем настройки из ini файлаaaa
+        //подтягиваем настройки из ini файлаaaa
         m_serial->setPortName("\\\\.\\"+QString(sett->value("COM_settings/Port", "error").toString())); //port name
         m_serial->setBaudRate(sett->value("COM_settings/BaudRate", "error").toInt()); //baud rate
         m_serial->setDataBits((QSerialPort::DataBits)(sett->value("COM_settings/ByteSize", "error").toInt())); //byte size
@@ -82,7 +82,7 @@ DeviceManager::DeviceManager(QWidget *parent)
             Send2BytesOnCOM(m_serial,0x8000); //команда переводящая микроконтроллер в режим ожидания
 
             SetGenOutps(vSockets,QString("ON"));//включаем выходы генераторов
-            Sleep(250); //(!!!) задержка отсекающая неопределенное поведение генератора при включении каналов с синхро по внешнему триггеру
+            Sleep(300); //(!!!) задержка отсекающая неопределенное поведение генератора при включении каналов с синхро по внешнему триггеру
 
             Send2BytesOnCOM(m_serial,0x4000); //команда на reset микроконтроллера
 
@@ -137,13 +137,15 @@ DeviceManager::DeviceManager(QWidget *parent)
 DeviceManager::~DeviceManager(){
     delete ui;
 
+//    delete objInitGens;
+//    delete devL502;
+//    delete dev10A;
+
     delete thInit10A;
     delete thInitL502;
     delete thInitGens;
 
-    delete objInitGens;
-    delete devL502;
-    delete dev10A;
+
 }
 
 void DeviceManager::slotDraw(QString msg){

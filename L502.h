@@ -7,7 +7,6 @@ class L502init:public QObject{
 
 private:
     t_l502_hnd* create;
-    QSettings* m_sett;
     QString nameLdrFile1;
     QString nameLdrFile2;
 public:

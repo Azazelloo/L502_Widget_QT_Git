@@ -1,17 +1,16 @@
 ﻿#include "L502.h"
 
-L502init::L502init(QSettings* sett):create(nullptr),m_sett(sett){
+L502init::L502init(QSettings* sett):create(nullptr){
     //читаем названия ldr файлов из ini файла
     create=new t_l502_hnd();
 
-    nameLdrFile1=m_sett->value("blackfin/dev1", "error").toString();
-    nameLdrFile2=m_sett->value("blackfin/dev2", "error").toString();
+    nameLdrFile1=sett->value("blackfin/dev1", "error").toString();
+    nameLdrFile2=sett->value("blackfin/dev2", "error").toString();
 }
 
 L502init::~L502init(){
     X502_Close(*create);
     delete create;
-    delete m_sett;
 }
 
 //______получаем обработчик L502, устанавливаем соединение
