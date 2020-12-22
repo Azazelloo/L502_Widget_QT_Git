@@ -4,6 +4,8 @@ QT       += widgets serialport
 QT       += serialport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+win32:RC_ICONS += ini/elvis_ico.ico
+
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use

@@ -63,9 +63,6 @@ DeviceManager::DeviceManager(QWidget *parent)
 
     connect(ui->SyncStm32,&QPushButton::clicked,this,[=](){
 
-        //auto vSockets=*(objInitGens->GetSocketsVector()); //вектор указателей на открытые сокеты
-        auto vSockets=objInitGens->GetSocketsVector();
-
        QSerialPort* m_serial=new QSerialPort;
 
         //подтягиваем настройки из ini файлаaaa
@@ -76,6 +73,7 @@ DeviceManager::DeviceManager(QWidget *parent)
         m_serial->setStopBits((QSerialPort::StopBits)(sett->value("COM_settings/StopBits", "error").toInt())); //stop bits
 
         if (m_serial->open(QIODevice::ReadWrite)){
+            auto vSockets=objInitGens->GetSocketsVector(); //вектор указателей на открытые сокеты
 
             SetGenOutps(vSockets,QString("OFF")); //выключаем выходы генераторов
 
@@ -84,7 +82,8 @@ DeviceManager::DeviceManager(QWidget *parent)
             SetGenOutps(vSockets,QString("ON"));//включаем выходы генераторов
             Sleep(300); //(!!!) задержка отсекающая неопределенное поведение генератора при включении каналов с синхро по внешнему триггеру
 
-            Send2BytesOnCOM(m_serial,0x4000); //команда на reset микроконтроллера
+            Send2BytesOnCOM(m_serial,0x4000 + ui->targetDelay->value());//QString(ui->targetDelay->text()).toUInt()); //команда на reset микроконтроллера + выставление дальности до цели
+
 
             m_serial->close();
             delete m_serial;
@@ -141,8 +140,13 @@ DeviceManager::~DeviceManager(){
 //    delete devL502;
 //    delete dev10A;
 
+    thInit10A->exit(0);
     delete thInit10A;
+
+    thInitL502->exit(0);
     delete thInitL502;
+
+    thInitGens->exit(0);
     delete thInitGens;
 
 
