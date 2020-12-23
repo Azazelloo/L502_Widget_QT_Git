@@ -15,4 +15,8 @@ private:
 public:
     ChangeSampleRateForm(QWidget* parent=nullptr,QVector<QTcpSocket*>* v=nullptr);
     ~ChangeSampleRateForm();
+
+signals:
+    void finished();
+
 };

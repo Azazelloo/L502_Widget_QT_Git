@@ -30,7 +30,7 @@ DeviceManager::DeviceManager(QWidget *parent)
     ,thInit10A(new QThread)
     ,thInitL502(new QThread)
     ,thInitGens(new QThread)
-    ,objInitGens(nullptr)
+    ,objInitGens()
     ,devL502(nullptr)
     ,dev10A(nullptr){
 
@@ -44,8 +44,10 @@ DeviceManager::DeviceManager(QWidget *parent)
 
     objInitGens->moveToThread(thInitGens);
     connect(objInitGens,SIGNAL(draw(QString)),this,SLOT(slotDraw(QString)));
+
     connect(thInitGens,&QThread::started,objInitGens,&InitGens::CheckAddrAndRunInit,Qt::DirectConnection);
-    connect(ui->changeSampleRate,&QPushButton::clicked,m_form=new ChangeSampleRateForm(nullptr,objInitGens->GetSocketsVector()), &ChangeSampleRateForm::show);
+
+    connect(ui->changeSampleRate,&QPushButton::clicked,m_form=new ChangeSampleRateForm(this,objInitGens->GetSocketsVector()), &ChangeSampleRateForm::show);
 
     connect(ui->initGens,&QPushButton::clicked,this,[=](){
         thInitGens->start();
@@ -55,6 +57,7 @@ DeviceManager::DeviceManager(QWidget *parent)
         qDebug()<<"thInitGens -> exit"<<endl;
         ui->changeSampleRate->setEnabled(true);
         ui->SyncStm32->setEnabled(true);
+
         thInitGens->exit(0);
     });
     /*////////////////////////////////////*/
@@ -134,11 +137,8 @@ DeviceManager::DeviceManager(QWidget *parent)
 }
 
 DeviceManager::~DeviceManager(){
-    delete ui;
 
-//    delete objInitGens;
-//    delete devL502;
-//    delete dev10A;
+    delete ui;
 
     thInit10A->exit(0);
     delete thInit10A;
@@ -148,8 +148,6 @@ DeviceManager::~DeviceManager(){
 
     thInitGens->exit(0);
     delete thInitGens;
-
-
 }
 
 void DeviceManager::slotDraw(QString msg){

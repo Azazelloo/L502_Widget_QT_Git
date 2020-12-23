@@ -7,20 +7,18 @@ ChangeSampleRateForm::ChangeSampleRateForm(QWidget* parent,QVector<QTcpSocket*>*
     connect(m_ui->ChangeSampleRateButton,&QPushButton::clicked,this,[=](){
         QTcpSocket* thSock;
         for(auto& sock:*m_v){
-            thSock=new QTcpSocket();
+            thSock=new QTcpSocket(this);
             thSock->setSocketDescriptor(sock->socketDescriptor());
             thSock->write(QString("FUNCtion:ARBitrary:SRATe "+m_ui->newSampleRate->text()+"\n").toUtf8());
+            thSock->waitForBytesWritten(1); //минимальная задержка для гарантии отправки сообщения
         }
     });
 
 }
 
 ChangeSampleRateForm::~ChangeSampleRateForm(){
+
+    delete m_ui;
     m_ui=nullptr;
-    for(auto& sock:*m_v){
-        delete[] sock;
-        sock=nullptr;
-    }
-    delete[] m_v;
     m_v=nullptr;
 }

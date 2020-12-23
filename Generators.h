@@ -26,8 +26,8 @@ private slots:
     void slotReadyRead();
 
 public:
-    InitGens();
-    InitGens(QSettings* sett);
+    //InitGens();
+    InitGens(QSettings* sett=nullptr);
     void GensSet(QSettings* sett);
     ~InitGens();
     void CheckAddrAndRunInit();

@@ -11,12 +11,15 @@ InitGens::InitGens(QSettings* sett):m_sett(sett),m_pTcpSocket(nullptr){
 }
 
 InitGens::~InitGens(){
-    delete m_sett;
+    qDebug()<<"Destructor InitGens!\n";
+
+    m_sett=nullptr;
     delete m_pTcpSocket;
 
     for(auto& sock:v_sockets_descriptors){
         sock->disconnectFromHost();
         sock->close();
+        delete sock;
         sock=nullptr;
     }
 
