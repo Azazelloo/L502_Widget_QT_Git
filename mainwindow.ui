@@ -85,7 +85,20 @@
        <string>Console</string>
       </property>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="4" column="1">
+       <item row="8" column="1">
+        <widget class="QTextBrowser" name="textBrowser"/>
+       </item>
+       <item row="7" column="1">
+        <widget class="QPushButton" name="connectL502devices">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Press to connect L502...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
         <widget class="QPushButton" name="SyncStm32">
          <property name="enabled">
           <bool>false</bool>
@@ -95,7 +108,7 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="1" column="1">
         <widget class="QPushButton" name="initGens">
          <property name="layoutDirection">
           <enum>Qt::LeftToRight</enum>
@@ -111,36 +124,23 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QPushButton" name="init10A">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Press to initialize 10A...</string>
-         </property>
-        </widget>
-       </item>
        <item row="5" column="1">
-        <widget class="QTextBrowser" name="textBrowser"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="connectL502devices">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Press to connect L502...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
         <widget class="QPushButton" name="changeSampleRate">
          <property name="enabled">
           <bool>false</bool>
          </property>
          <property name="text">
           <string>Press to change sapmle rate...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="init10A">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="text">
+          <string>Press to initialize 10A...</string>
          </property>
         </widget>
        </item>

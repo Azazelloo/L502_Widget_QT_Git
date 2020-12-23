@@ -4,10 +4,12 @@
 
 InitGens::InitGens(QSettings* sett):m_sett(sett),m_pTcpSocket(nullptr){
     //читаем адреса генераторов из ini файла
-    addresses.push_back(m_sett->value("addresses/gen1", "error").toString());
-    addresses.push_back(m_sett->value("addresses/gen2", "error").toString());
-    addresses.push_back(m_sett->value("addresses/gen3", "error").toString());
-    addresses.push_back(m_sett->value("addresses/gen4", "error").toString());
+    if(m_sett!=nullptr){
+        addresses.push_back(m_sett->value("addresses/gen1", "error").toString());
+        addresses.push_back(m_sett->value("addresses/gen2", "error").toString());
+        addresses.push_back(m_sett->value("addresses/gen3", "error").toString());
+        addresses.push_back(m_sett->value("addresses/gen4", "error").toString());
+    }
 }
 
 InitGens::~InitGens(){

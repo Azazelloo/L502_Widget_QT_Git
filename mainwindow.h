@@ -1,5 +1,11 @@
 ﻿#pragma once
 
+
+#define CMR 0.01171875
+#define VALFORM1 17		//количество слов отправляемых в прибор (согласно протоколу)
+#define VALFORM2 25		//количество слов принимаемых из прибора (согласно протоколу)
+#define kvant 300
+
 #include <QMainWindow>
 #include <QSerialPort>
 #include <QSettings>
@@ -12,7 +18,10 @@
 #include <QCloseEvent>
 #include <QAction>
 #include <QFile>
+
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 
 #include "string.h"
 #include "windows.h"
@@ -22,6 +31,7 @@
 #include "init10A.h"
 #include "L502.h"
 #include "Generators.h"
+
 
 class InitGens;
 class initial10A;
@@ -55,6 +65,7 @@ private:
     ChangeSampleRateForm* m_form=nullptr;
 
     HANDLE m_hSerial=nullptr;
+    QSerialPort* m_serial=nullptr;
 
 private slots:
     void slotDraw(QString msg); //отрисовка виджета из потока

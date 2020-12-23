@@ -30,13 +30,26 @@ DeviceManager::DeviceManager(QWidget *parent)
     ,thInit10A(new QThread)
     ,thInitL502(new QThread)
     ,thInitGens(new QThread)
-    ,objInitGens()
+    ,objInitGens(nullptr)
     ,devL502(nullptr)
     ,dev10A(nullptr){
 
     ui->setupUi(this);
 
     QSettings* sett = new QSettings("ini/settings.ini", QSettings::IniFormat);
+
+    //_____открываем соединени с микроконтроллером
+    m_serial=new QSerialPort();
+    //подтягиваем настройки из ini файлаaaa
+            m_serial->setPortName("\\\\.\\"+QString(sett->value("COM settings/Port", "error").toString())); //port name
+            m_serial->setBaudRate(sett->value("COM settings/BaudRate", "error").toInt()); //baud rate
+            m_serial->setDataBits((QSerialPort::DataBits)(sett->value("COM settings/ByteSize", "error").toInt())); //byte size
+            m_serial->setParity((QSerialPort::Parity)(sett->value("COM settings/Parity", "error").toInt())); //parity
+            m_serial->setStopBits((QSerialPort::StopBits)(sett->value("COM settings/StopBits", "error").toInt())); //stop bits
+
+            if (!(m_serial->open(QIODevice::ReadWrite))){
+                qDebug()<<"Error open COM!"<<endl;
+            }
 
 
     //_____ИНИЦИАЛИЗАЦИЯ ГЕНЕРАТОРОВ
@@ -66,37 +79,18 @@ DeviceManager::DeviceManager(QWidget *parent)
 
     connect(ui->SyncStm32,&QPushButton::clicked,this,[=](){
 
-       QSerialPort* m_serial=new QSerialPort;
+        auto vSockets=objInitGens->GetSocketsVector(); //вектор указателей на открытые сокеты
 
-        //подтягиваем настройки из ini файлаaaa
-        m_serial->setPortName("\\\\.\\"+QString(sett->value("COM_settings/Port", "error").toString())); //port name
-        m_serial->setBaudRate(sett->value("COM_settings/BaudRate", "error").toInt()); //baud rate
-        m_serial->setDataBits((QSerialPort::DataBits)(sett->value("COM_settings/ByteSize", "error").toInt())); //byte size
-        m_serial->setParity((QSerialPort::Parity)(sett->value("COM_settings/Parity", "error").toInt())); //parity
-        m_serial->setStopBits((QSerialPort::StopBits)(sett->value("COM_settings/StopBits", "error").toInt())); //stop bits
+        SetGenOutps(vSockets,QString("OFF")); //выключаем выходы генераторов
 
-        if (m_serial->open(QIODevice::ReadWrite)){
-            auto vSockets=objInitGens->GetSocketsVector(); //вектор указателей на открытые сокеты
+        Send2BytesOnCOM(m_serial,0x8000); //команда переводящая микроконтроллер в режим ожидания
 
-            SetGenOutps(vSockets,QString("OFF")); //выключаем выходы генераторов
+        SetGenOutps(vSockets,QString("ON"));//включаем выходы генераторов
+        Sleep(300); //(!!!) задержка отсекающая неопределенное поведение генератора при включении каналов с синхро по внешнему триггеру
 
-            Send2BytesOnCOM(m_serial,0x8000); //команда переводящая микроконтроллер в режим ожидания
+        Send2BytesOnCOM(m_serial,0x4000 + ui->targetDelay->value());//QString(ui->targetDelay->text()).toUInt()); //команда на reset микроконтроллера + выставление дальности до цели
 
-            SetGenOutps(vSockets,QString("ON"));//включаем выходы генераторов
-            Sleep(300); //(!!!) задержка отсекающая неопределенное поведение генератора при включении каналов с синхро по внешнему триггеру
-
-            Send2BytesOnCOM(m_serial,0x4000 + ui->targetDelay->value());//QString(ui->targetDelay->text()).toUInt()); //команда на reset микроконтроллера + выставление дальности до цели
-
-
-            m_serial->close();
-            delete m_serial;
-
-            qDebug()<<"Synchronization is done!"<<endl;
-
-        }
-        else{
-            qDebug()<<"Error open COM!"<<endl;
-        }
+        qDebug()<<"Synchronization is done!"<<endl;
     });
 
     /*////////////////////////////////////*/
@@ -125,6 +119,7 @@ DeviceManager::DeviceManager(QWidget *parent)
     connect(dev10A,SIGNAL(draw(QString)),this,SLOT(slotDraw(QString)));
 
     connect(thInit10A,&QThread::started,dev10A,&initial10A::run10A,Qt::DirectConnection);
+
     connect(dev10A,&initial10A::finished,thInit10A,[=](){
         qDebug()<<"thInit10A -> exit"<<endl;
         thInit10A->exit(0);
@@ -148,6 +143,9 @@ DeviceManager::~DeviceManager(){
 
     thInitGens->exit(0);
     delete thInitGens;
+
+    m_serial->close();
+    delete m_serial;
 }
 
 void DeviceManager::slotDraw(QString msg){
