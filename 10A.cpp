@@ -3,7 +3,7 @@
 
 
 initial10A::initial10A():bcnum(0),addrOU(1),GoodRNVULC(0xF000),GoodRN10H(0x001E){
-    hBcEvent = CreateEvent(NULL, TRUE, FALSE, NULL);//создаем событие для прерываний
+    //hBcEvent = CreateEvent(NULL, TRUE, FALSE, NULL);//создаем событие для прерываний
     tmkEvD=new TTmkEventData();
 }
 
@@ -122,39 +122,45 @@ void initial10A::run10A(){
 
            dataExchange[3] = tmpRK4;
 
-//           Sleep(5000); //временно, для синхронизации FM ->ПЕРЕДЕЛАТЬ
+           while(revCounter<10){ //получить количество обзоров извне
 
-//           while(revCounter!=10){ //получить количество обзоров извне
+               if (!SingleExchange()){
 
-//               if (!SingleExchange()){
+                   //____анализ угла отклонения
+                     wA= (short)dataExchangeRet[1]*CMR; //угол отклонения луча антенны в горизонтальной плоскости
+                     wCK=(short)dataExchangeRet[2]*CMR; //угол сканирования
 
-//                   wA= (short)dataExchangeRet[1]*CMR; //угол отклонения луча антенны в горизонтальной плоскости
-//                   wCK=(short)dataExchangeRet[2]*CMR; //угол сканирования
+                     qDebug()<<wA<<endl;
 
-//                   if (wA <= -39 && (!(dataExchange[3]&0x1000))) { //меняем направление движения антенны при достижении крайнего положения
-//                       //out << "Review: "<<++revCounter<<"\n";
-//                       //GetReview(out);
-//                       ++revCounter;
-//                       dataExchange[3] ^= 0x1000; //регистр Вп-Вл
-//                   }
-//                   if (wA >= 39 && (dataExchange[3] & 0x1000)) { //меняем направление движения антенны при достижении крайнего положения
-//                       //out << "Review: " << ++revCounter << "\n";
-//                       //GetReview(out);
-//                       ++revCounter;
-//                       dataExchange[3] ^= 0x1000; //регистр Вп-Вл
-//                   }
-//               }
-//               else{
-//                   qDebug()<< "---Continuous exchange error!\n";
-//                   out.close();
-//                   emit finished();
-//               }
+                     if (wA <= -39 && (!(dataExchange[3] & 0x1000))) { //меняем направление движения антенны при достижении крайнего положения
+                         //out << "Review: "<<revCounter<<"\n";
+                         ++revCounter;
+                         //GetReview(out);
+                         dataExchange[3] ^= 0x1000;
+                     }
+                     else if (wA >= 39 && (dataExchange[3] & 0x1000)) { //меняем направление движения антенны при достижении крайнего положения
+                         //out << "Review: " << revCounter << "\n";
+                         ++revCounter;
+                         //GetReview(out);
+                         dataExchange[3] ^= 0x1000;
+                      }
+                      /*/////////////////////////////*/
+                     Sleep(2000);
+               }
+               else{
+                   qDebug()<< "---Continuous exchange error!\n";
+                   out.close();
+                   break;
+               }
 
-//           }
+           }
 
     }
 
-    qDebug()<<"Close reviews!\n";
+    tmkdone(ALL_TMKS);
+    TmkClose();
+    CloseHandle(hBcEvent);
+
     emit finished();
 }
 
@@ -204,26 +210,34 @@ int initial10A::SingleExchange() {
     return err;
 }
 
+//_____логируем результаты обзоров
 bool initial10A::GetReview(std::ofstream& out) {
 
     int err = 0;
-    uint16_t startWord = 2;//начинаем чтение формуляров из 4 подадреса со второго слова
+    unsigned short subAddr = 4;
+    uint16_t countForms = dataExchangeRet[10]; // считываем количество формуляров целей
+    uint16_t tmpDataExchange[31];
 
-    //____проверяем наличие формуляров целей
-    if (dataExchangeRet[10]) { //если есть формуляры
-        for (int i = 0; i < dataExchangeRet[10]; i++) {
-            err = OUtoKK(dataExchangeRet, 4, 3, startWord); //в режиме обзор 3 слова в формуляре
-            formsReviews[i + 1] = std::vector<uint16_t>(dataExchangeRet, dataExchangeRet + 3);
-            startWord += 3;
+    if (countForms) { //если есть формуляры
+
+        std::vector<uint16_t> formsReviews;
+
+        for (int i = 0; i < ((dataExchangeRet[10]*3)/31) ;i++) { //считаем сколько нужно прочитать полных подадресов исходя из количества целей
+            err = OUtoKK(tmpDataExchange, subAddr, 31, 2);
+            ++subAddr; //переходим на следующий подадрес
+            formsReviews.insert(formsReviews.end(), tmpDataExchange, tmpDataExchange+31);
         }
+        //считываем последний неполный подадрес
+        uint16_t countRem = (countForms * 3) - 31 * ((countForms * 3) / 31); //считаем сколько слов не считано
+        err = OUtoKK(tmpDataExchange, subAddr, countRem, 2);
+        formsReviews.insert(formsReviews.end(), tmpDataExchange, tmpDataExchange + countRem);
 
-        for (auto& form : formsReviews) {
-            out << std::setw(5) << form.first << "\t\t";
-
-            //______в обзоре всегда три слова (дальность, угол начала, угол конца)
-            out << std::setw(10)<<((form.second[0]) >> 4)*kvant + dataExchange[5] << "\t"; //дальность -> сдвинутое слово умножаем на квант + дальность начала зоны обнаружения
-            out << std::setw(10)<<(short)form.second[1] * CMR / 2 << "\t"; //угол начала
-            out << std::setw(10)<<(short)form.second[2] * CMR / 2 << "\t"; //угол конца
+        //_____пишем логи целей
+        for (int i = 0; i < countForms;i+=3) {
+            out << std::setw(5) << i/3 << "\t\t";
+            out << std::setw(10) << ((formsReviews[i]) >> 4)*kvant + dataExchange[5] << "\t"; //дальность -> сдвинутое слово умножаем на квант + дальность начала зоны обнаружения
+            out << std::setw(10)<<(short)formsReviews[i+1] * CMR / 2 << "\t"; //угол начала
+            out << std::setw(10)<<(short)formsReviews[i+2] * CMR / 2 << "\t"; //угол конца
             out << "\n";
         }
         out << "\n";

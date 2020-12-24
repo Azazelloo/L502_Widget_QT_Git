@@ -5,7 +5,6 @@
 #include "windows.h"
 
 
-
 class initial10A:public QObject{
     Q_OBJECT
 private:
@@ -19,7 +18,6 @@ private:
 
     uint16_t dataExchange[VALFORM1] = { 0 };
     uint16_t dataExchangeRet[VALFORM2] = { 0 };
-    std::map<int,std::vector<uint16_t>> formsReviews;
 
 signals:
     void finished();
