@@ -2,12 +2,15 @@
 #include "inc/WDMTMKv2.cpp"
 
 
-initial10A::initial10A():bcnum(0),addrOU(1),GoodRNVULC(0xF000),GoodRN10H(0x001E){
+initial10A::initial10A(Ui::DeviceManager* ui):bcnum(0),addrOU(1),GoodRNVULC(0xF000),GoodRN10H(0x001E),m_ui(ui){
     //hBcEvent = CreateEvent(NULL, TRUE, FALSE, NULL);//создаем событие для прерываний
-    tmkEvD=new TTmkEventData();
+    tmkEvD=new TTmkEventData;
 }
 
 initial10A::~initial10A(){
+
+    m_ui=nullptr;
+
     tmkdone(ALL_TMKS);
     TmkClose();
     CloseHandle(hBcEvent);
@@ -32,6 +35,7 @@ int initial10A::Init10A() {
     err = bcreset(); // обнуляем биты
 
     hBcEvent = CreateEvent(NULL, TRUE, FALSE, NULL);//создаем событие для прерываний
+
     tmkdefevent(hBcEvent, TRUE); //устанавливаем событие для прерываний
     ResetEvent(hBcEvent);
     err = bcdefirqmode(0x00000000); //все прерывания разрешены
@@ -107,10 +111,10 @@ void initial10A::run10A(){
             in.close();
 
         //_____обзоры
-            addrOU=12;
+           //addrOU=12;
 
            double wA = 0, wCK = 0;
-           size_t revCounter=0;
+           int revCounter=0;
 
            std::ofstream out;
            out.open("ini/disp.txt"); //сюда пишем логи обзоров
@@ -122,30 +126,27 @@ void initial10A::run10A(){
 
            dataExchange[3] = tmpRK4;
 
-           while(revCounter<10){ //получить количество обзоров извне
+           while(revCounter< m_ui->countReviews->value()){
 
                if (!SingleExchange()){
 
                    //____анализ угла отклонения
-                     wA= (short)dataExchangeRet[1]*CMR; //угол отклонения луча антенны в горизонтальной плоскости
-                     wCK=(short)dataExchangeRet[2]*CMR; //угол сканирования
+                     wA= static_cast<int16_t>(dataExchangeRet[1])*CMR; //угол отклонения луча антенны в горизонтальной плоскости
+                     wCK=static_cast<int16_t>(dataExchangeRet[2])*CMR; //угол сканирования
 
-                     qDebug()<<wA<<endl;
-
-                     if (wA <= -39 && (!(dataExchange[3] & 0x1000))) { //меняем направление движения антенны при достижении крайнего положения
-                         //out << "Review: "<<revCounter<<"\n";
+                     if ((wA <= -39) && (!(dataExchange[3] & 0x1000))) { //меняем направление движения антенны при достижении крайнего положения
+                         out << "Review: "<<revCounter<<"\n";
                          ++revCounter;
-                         //GetReview(out);
-                         dataExchange[3] ^= 0x1000;
+                         GetReview(out);
+                         dataExchange[3] ^=(unsigned short) 0x1000;
                      }
-                     else if (wA >= 39 && (dataExchange[3] & 0x1000)) { //меняем направление движения антенны при достижении крайнего положения
-                         //out << "Review: " << revCounter << "\n";
+                     if ((wA >= 39) && (dataExchange[3] & 0x1000)) { //меняем направление движения антенны при достижении крайнего положения
+                         out << "Review: " << revCounter << "\n";
                          ++revCounter;
-                         //GetReview(out);
-                         dataExchange[3] ^= 0x1000;
+                         GetReview(out);
+                         dataExchange[3] ^=(unsigned short) 0x1000;
                       }
                       /*/////////////////////////////*/
-                     Sleep(2000);
                }
                else{
                    qDebug()<< "---Continuous exchange error!\n";
@@ -175,7 +176,7 @@ int initial10A::OUtoKK(uint16_t* word,unsigned short subAddr,unsigned short numW
     ResetEvent(hBcEvent);// обновляем событие
 
     tmkgetevd((TTmkEventData*)tmkEvD);
-    if (! ((TTmkEventData*)tmkEvD)->bc.wResult) {
+    if (((TTmkEventData*)tmkEvD)->bc.wResult == 0) {  //при успешном обмене в  bc.wResult будет 0
         return 0;
     }
 
@@ -192,7 +193,7 @@ int initial10A::KKtoOU(uint16_t* word, unsigned short subAddr, unsigned short nu
     ResetEvent(hBcEvent);
 
     tmkgetevd((TTmkEventData*)tmkEvD);
-    if (! ((TTmkEventData*)tmkEvD)->bc.wResult) {
+    if (! ((TTmkEventData*)tmkEvD)->bc.wResult) { //при успешном обмене в  bc.wResult будет 0
         return 0;
     }
 
@@ -207,6 +208,8 @@ int initial10A::SingleExchange() {
 
     err = OUtoKK(dataExchangeRet, 3, VALFORM2,2); //принимаем 25 слов с третьего подадреса
                                                   //начинаем читать со 2 слова
+
+    Sleep(1); //без задержки обмен с манчестером зависает -> разобраться (зависимость от компилятора?)
     return err;
 }
 

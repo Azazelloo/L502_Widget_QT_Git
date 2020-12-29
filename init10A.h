@@ -16,6 +16,8 @@ private:
     HANDLE hBcEvent;
     void* tmkEvD;
 
+    Ui::DeviceManager* m_ui;
+
     uint16_t dataExchange[VALFORM1] = { 0 };
     uint16_t dataExchangeRet[VALFORM2] = { 0 };
 
@@ -24,7 +26,7 @@ signals:
     void draw(QString msg);
 
 public:
-    initial10A();
+    initial10A(Ui::DeviceManager*);
     ~initial10A();
 
     int Init10A();

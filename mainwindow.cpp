@@ -113,7 +113,7 @@ DeviceManager::DeviceManager(QWidget *parent)
     /*////////////////////////////////////*/
 
     //_____ИНИЦИАЛИЗАЦИЯ 10А
-    dev10A=new initial10A();
+    dev10A=new initial10A(ui);
 
     dev10A->moveToThread(thInit10A);
     connect(dev10A,SIGNAL(draw(QString)),this,SLOT(slotDraw(QString)));
