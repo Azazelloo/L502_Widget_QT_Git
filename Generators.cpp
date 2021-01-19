@@ -2,7 +2,7 @@
 
 //QVector<QTcpSocket*> DeviceManager::v_sockets;
 
-InitGens::InitGens(QSettings* sett):m_sett(sett),m_pTcpSocket(nullptr){
+InitGens::InitGens(Ui::DeviceManager* ui,QSettings* sett):m_ui(ui),m_sett(sett),m_pTcpSocket(nullptr){
     //читаем адреса генераторов из ini файла
     if(m_sett!=nullptr){
         addresses.push_back(m_sett->value("addresses/gen1", "error").toString());
@@ -15,6 +15,7 @@ InitGens::InitGens(QSettings* sett):m_sett(sett),m_pTcpSocket(nullptr){
 InitGens::~InitGens(){
     qDebug()<<"Destructor InitGens!\n";
 
+    m_ui=nullptr;
     m_sett=nullptr;
     delete m_pTcpSocket;
 
@@ -145,14 +146,18 @@ void InitGens::InitialGen(QString* addr){
             CreateArbFileInGenMem(i);
         }
 
-        CreateSeqFromArb(); //создаем seq файл из загруженных arb файлов
-        CreateCustomSeq();  //создаем свой seq файл
+        //_____проверяем чекбокс создания seq файла
+        if(m_ui->checkSourseSeqFile->isChecked()){
+            CreateSeqFromArb(); //создаем seq файл из загруженных arb файлов
 
-        m_pTcpSocket->write(QString("MMEMory:LOAD:DATA \"INT:\\MyArbs\\seqFm.seq\"\n").toUtf8());//загружаем сгенерированную последовательность
-        m_pTcpSocket->write(QString("FUNCtion:ARBitrary \"INT:\\MyArbs\\seqFm.seq\"\n").toUtf8()); //делаем сгенерированную последовательность активной
-
-//        m_pTcpSocket->write(QString("MMEMory:LOAD:DATA \"INT:\\MyArbs\\FM.seq\"\n").toUtf8());//загружаем custom последовательность
-//        m_pTcpSocket->write(QString("FUNCtion:ARBitrary \"INT:\\MyArbs\\FM.seq\"\n").toUtf8()); //делаем custom последовательность активной
+            m_pTcpSocket->write(QString("MMEMory:LOAD:DATA \"INT:\\MyArbs\\seqFm.seq\"\n").toUtf8());//загружаем сгенерированную последовательность
+            m_pTcpSocket->write(QString("FUNCtion:ARBitrary \"INT:\\MyArbs\\seqFm.seq\"\n").toUtf8()); //делаем сгенерированную последовательность активной
+        }
+        else{
+            CreateCustomSeq();  //создаем свой seq файл
+            m_pTcpSocket->write(QString("MMEMory:LOAD:DATA \"INT:\\MyArbs\\FM.seq\"\n").toUtf8());//загружаем custom последовательность
+            m_pTcpSocket->write(QString("FUNCtion:ARBitrary \"INT:\\MyArbs\\FM.seq\"\n").toUtf8()); //делаем custom последовательность активной
+        }
 
 
         m_pTcpSocket->write(QString("FUNCtion:ARBitrary:SRATe "+*freqSeq+"\n").toUtf8()); //устанавливаем частоту дискретизации последовательности
@@ -163,7 +168,13 @@ void InitGens::InitialGen(QString* addr){
 
         m_pTcpSocket->write(QString("SOURce1:VOLTage "+*ampSignal+"\n").toUtf8());
 
-         m_pTcpSocket->write(QString(":FUNC:ARB:FILT OFF\n").toUtf8()); // отключаем фильтр
+        //_____проверяем чекбокс включения фильтра
+        if(m_ui->filterState->isChecked()) {
+             m_pTcpSocket->write(QString(":FUNC:ARB:FILT NORM\n").toUtf8()); // включаем фильтр
+        }
+        else{
+             m_pTcpSocket->write(QString(":FUNC:ARB:FILT OFF\n").toUtf8()); // отключаем фильтр
+        }
 
         //проверяем наличие ошибок на генераторе
         m_pTcpSocket->write(QString("SYST:ERR?\n").toUtf8());

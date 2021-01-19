@@ -6,6 +6,8 @@ class InitGens:public QObject{
     Q_OBJECT
 
 private:
+    Ui::DeviceManager* m_ui;
+
     QSettings* m_sett;
     QTcpSocket* m_pTcpSocket; //_____сокет генератора
     QVector<QTcpSocket*> v_sockets_descriptors; //_____дескрипторы открываемых сокетов для передачи в другой поток
@@ -27,7 +29,7 @@ private slots:
 
 public:
     //InitGens();
-    InitGens(QSettings* sett=nullptr);
+    InitGens(Ui::DeviceManager*,QSettings* sett=nullptr);
     void GensSet(QSettings* sett);
     ~InitGens();
     void CheckAddrAndRunInit();

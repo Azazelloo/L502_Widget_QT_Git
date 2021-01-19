@@ -53,7 +53,7 @@ DeviceManager::DeviceManager(QWidget *parent)
 
 
     //_____ИНИЦИАЛИЗАЦИЯ ГЕНЕРАТОРОВ
-    objInitGens=new InitGens(sett);
+    objInitGens=new InitGens(ui,sett);
 
     objInitGens->moveToThread(thInitGens);
     connect(objInitGens,SIGNAL(draw(QString)),this,SLOT(slotDraw(QString)));
